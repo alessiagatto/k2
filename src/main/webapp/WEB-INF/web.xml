@@ -14,6 +14,17 @@
         <error-code>500</error-code>
         <location>/error500.jsp</location>
     </error-page>
+     <!-- Dichiarazione del filtro -->
+    <filter>
+        <filter-name>ClickjackingProtectionFilter</filter-name>
+        <filter-class>control.ClickjackingProtectionFilter</filter-class>
+    </filter>
+
+    <!-- Mappatura del filtro a tutte le richieste -->
+    <filter-mapping>
+        <filter-name>ClickjackingProtectionFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
   <login-config>
   	<auth-method>FORM</auth-method>
