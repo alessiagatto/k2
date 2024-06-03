@@ -1,11 +1,13 @@
 package control;
 
 import java.io.IOException;
+import org.mindrot.jbcrypt.BCrypt;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.servlet.ServletException;
@@ -98,19 +100,57 @@ public class Login extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + redirectedPage);
 	}
 		
-	private String checkPsw(String psw) {
-		MessageDigest md = null;
-		try {
-			md = MessageDigest.getInstance("MD5");
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-		byte[] messageDigest = md.digest(psw.getBytes());
-		BigInteger number = new BigInteger(1, messageDigest);
-		String hashtext = number.toString(16);
-		
-		return hashtext;
-	}
+	private String hashPassword(String psw) {
+        return BCrypt.hashpw(psw, BCrypt.gensalt());
+    }
+	private boolean checkPsw(String plainPassword, String hashedPassword) {
+        return BCrypt.checkpw(plainPassword, hashedPassword);
+    }
+	public boolean authenticateUser(String email, String password) {
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        
+        try {
+            connection = DriverManagerConnectionPool.getConnection();
+            String sql = "SELECT passwordUser FROM UserAccount WHERE email = ?";
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, email);
+            resultSet = preparedStatement.executeQuery();
 
+            if (resultSet.next()) {
+                String storedHashedPassword = resultSet.getString("passwordUser");
+
+                // Verifica della password con bcrypt
+                return checkPsw(password, storedHashedPassword);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (resultSet != null) {
+                try {
+                    resultSet.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (preparedStatement != null) {
+                try {
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return false;
+    }
 }
+

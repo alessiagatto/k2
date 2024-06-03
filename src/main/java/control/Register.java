@@ -1,6 +1,7 @@
 package control;
 
 import java.io.IOException;
+import org.mindrot.jbcrypt.BCrypt;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -52,14 +53,17 @@ public class Register extends HttpServlet {
 		String redirectedPage = "/loginPage.jsp";
 		try {
 			Connection con = DriverManagerConnectionPool.getConnection();
-			String sql = "INSERT INTO UserAccount(email, passwordUser, nome, cognome, indirizzo, telefono, numero, intestatario, CVV) VALUES (?, MD5(?), ?, ?, ?, ?, ?, ?, ?)";
+			
+			String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+			
+			String sql = "INSERT INTO UserAccount(email, passwordUser, nome, cognome, indirizzo, telefono, numero, intestatario, CVV) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			String sql2 = "INSERT INTO Cliente(email) VALUES (?)";
 			String sql3 = "INSERT INTO Venditore(email) VALUES (?)";
 			
 			//Aggiungi a AccountUser
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, email);
-			ps.setString(2, password);
+			ps.setString(2, hashedPassword);
 			ps.setString(3, nome);
 			ps.setString(4, cognome);
 			ps.setString(5, indirizzo);
